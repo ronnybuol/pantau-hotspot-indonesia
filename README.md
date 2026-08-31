@@ -13,7 +13,7 @@ Proyek data journalism untuk memvisualisasikan perubahan harian **deteksi hotspo
 
 ## Struktur
 - `src/` — HTML/CSS/JS aplikasi
-- `data/` — data siap web yang sudah dipadatkan
+- `data/` — data siap web yang sudah dipadatkan (grid nasional 0,25°)
 - `scripts/` — pipeline preprocessing NASA FIRMS
 - `docs/` — metodologi editorial dan panduan deploy
 - `wrangler.jsonc` — konfigurasi Cloudflare Workers Static Assets
