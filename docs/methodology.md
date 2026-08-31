@@ -9,10 +9,14 @@ Jumlah record: 195.722 deteksi.
 Visual menggunakan istilah **deteksi hotspot**, bukan “jumlah kebakaran”. Satu kejadian kebakaran dapat menghasilkan lebih dari satu deteksi dan dapat teramati pada lintasan satelit yang berbeda. Anomali termal juga dapat berasal dari sumber panas persisten selain karhutla.
 
 ## Agregasi spasial
-Untuk visual nasional agar lancar di web dan ponsel, latitude/longitude dikelompokkan ke grid 0,25 derajat (sekitar 25–28 km pada lintang Indonesia). Setiap grid per hari menyimpan:
+Untuk visual nasional agar lancar di web dan ponsel, latitude/longitude dikelompokkan ke grid 0,25 derajat (sekitar 25–28 km pada lintang Indonesia).
+
+Payload peta produksi per grid per hari hanya menyimpan:
+- posisi grid;
 - jumlah deteksi;
-- total dan maksimum FRP;
 - jumlah hari grid tersebut aktif sepanjang periode dataset.
+
+FRP tetap dihitung dari seluruh record sumber dan ditampilkan sebagai statistik **harian nasional**, bukan sebagai atribut lingkaran pada peta produksi.
 
 Jumlah deteksi harian tetap dihitung dari seluruh record sumber; agregasi grid hanya mengubah cara titik digambar pada peta, bukan total harian.
 
@@ -21,3 +25,6 @@ Prototype menyediakan filter eksploratif untuk menyembunyikan grid yang aktif se
 
 ## Puncak
 Tanggal dengan deteksi terbanyak dalam dataset adalah 29 Agustus 2026: 10.927 deteksi.
+
+## Quality control
+`node scripts/validate_web_data.mjs` membuka kembali seluruh payload peta produksi, membandingkan jumlah grid per hari dengan ringkasan harian, memeriksa total record, tanggal, manifest, dan tanggal puncak. Pemeriksaan yang sama dijalankan otomatis oleh GitHub Actions pada setiap perubahan di `main` atau pull request.
