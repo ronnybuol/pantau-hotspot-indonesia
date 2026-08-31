@@ -4,7 +4,7 @@
   "records": 195722,
   "start_date": "2026-01-01",
   "end_date": "2026-08-30",
-  "grid_deg": 0.05,
+  "grid_deg": 0.25,
   "peak_date": "2026-08-29",
   "peak_count": 10927,
   "persistent_threshold_days": 60,
