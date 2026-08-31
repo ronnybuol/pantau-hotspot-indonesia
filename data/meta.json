@@ -1,0 +1,21 @@
+{
+  "title": "Deteksi Hotspot Indonesia 2026",
+  "source": "NASA FIRMS VIIRS NOAA-21 (N21), 2.0NRT",
+  "records": 195722,
+  "start_date": "2026-01-01",
+  "end_date": "2026-08-30",
+  "grid_deg": 0.05,
+  "peak_date": "2026-08-29",
+  "peak_count": 10927,
+  "persistent_threshold_days": 60,
+  "monthly": [
+    {"month":"2026-01","count":5707,"frp_sum":40943.61,"days":31,"avg_per_day":184.1},
+    {"month":"2026-02","count":3540,"frp_sum":25395.79,"days":28,"avg_per_day":126.4},
+    {"month":"2026-03","count":7642,"frp_sum":60881.0,"days":31,"avg_per_day":246.5},
+    {"month":"2026-04","count":5365,"frp_sum":35297.42,"days":30,"avg_per_day":178.8},
+    {"month":"2026-05","count":4306,"frp_sum":24775.06,"days":31,"avg_per_day":138.9},
+    {"month":"2026-06","count":8334,"frp_sum":48013.49,"days":30,"avg_per_day":277.8},
+    {"month":"2026-07","count":27567,"frp_sum":208758.61,"days":31,"avg_per_day":889.3},
+    {"month":"2026-08","count":133261,"frp_sum":1302130.62,"days":30,"avg_per_day":4442.0}
+  ]
+}
