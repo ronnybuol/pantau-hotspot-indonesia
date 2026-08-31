@@ -56,9 +56,15 @@ def parse_month(raw: bytes, key: str):
 
 def main() -> None:
     meta = json.loads((DATA / "meta.json").read_text(encoding="utf-8"))
-    summary_raw = load_gzip_b64(DATA / "summary-compact.json.gz.b64")
-    summary_rows = json.loads(summary_raw)
-    summary = {date: {"count": count, "frp": frp} for date, count, frp in summary_rows}
+
+    compact_rows = json.loads(load_gzip_b64(DATA / "summary-compact.json.gz.b64"))
+    summary = {date: {"count": count, "frp": frp} for date, count, frp in compact_rows}
+
+    # The browser currently reads the legacy object-shaped summary. Verify that it
+    # is semantically identical to the canonical compact summary used by QC.
+    browser_rows = json.loads(load_gzip_b64(DATA / "summary.json.gz.b64"))
+    browser_summary = {row["date"]: {"count": row["count"], "frp": row["frp_sum"]} for row in browser_rows}
+    assert browser_summary == summary, "Browser summary differs from canonical compact summary"
 
     manifest = json.loads((MONTHS / "manifest.json").read_text(encoding="utf-8"))
     checksums = json.loads((MONTHS / "checksums.json").read_text(encoding="utf-8"))
