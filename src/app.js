@@ -11,6 +11,7 @@ let currentIndex = 0;
 let playing = false;
 let timer = null;
 let monthCache = new Map();
+let monthManifest = {};
 let hotspotLayer = null;
 let chart = null;
 
@@ -42,11 +43,8 @@ async function loadJSON(url){
   return r.json();
 }
 
-async function loadCompressedJSON(url){
+async function decodeCompressedJSON(b64){
   if(!('DecompressionStream' in window)) throw new Error('Browser tidak mendukung DecompressionStream');
-  const r = await fetch(url);
-  if(!r.ok) throw new Error(`Gagal memuat ${url}`);
-  const b64 = (await r.text()).trim();
   const binary = atob(b64);
   const bytes = new Uint8Array(binary.length);
   for(let i=0;i<binary.length;i++) bytes[i]=binary.charCodeAt(i);
@@ -55,13 +53,23 @@ async function loadCompressedJSON(url){
   return JSON.parse(text);
 }
 
+async function loadCompressedJSON(url){
+  const r = await fetch(url);
+  if(!r.ok) throw new Error(`Gagal memuat ${url}`);
+  return decodeCompressedJSON((await r.text()).trim());
+}
+
 async function loadMonth(key){
-  try{
-    return await loadCompressedJSON(`${DATA_BASE}/months-compact-b64/${key}.json.gz.b64`);
-  }catch(err){
-    console.warn('Compressed month fallback:', err);
-    return loadJSON(`${DATA_BASE}/months/${key}.json`);
+  const parts = monthManifest[key];
+  if(parts?.length){
+    const chunks = await Promise.all(parts.map(async name => {
+      const r = await fetch(`${DATA_BASE}/months-upload/${name}`);
+      if(!r.ok) throw new Error(`Gagal memuat ${name}`);
+      return (await r.text()).trim();
+    }));
+    return decodeCompressedJSON(chunks.join(''));
   }
+  return loadCompressedJSON(`${DATA_BASE}/months-compact-b64/${key}.json.gz.b64`);
 }
 
 async function getDayData(iso){
@@ -200,7 +208,11 @@ els.speed.addEventListener('change',()=>{ if(playing){clearTimeout(timer);schedu
 document.addEventListener('visibilitychange',()=>{ if(document.hidden) stop(); });
 
 async function init(){
-  [summary,meta]=await Promise.all([loadCompressedJSON(`${DATA_BASE}/summary.json.gz.b64`).catch(()=>loadJSON(`${DATA_BASE}/summary.json`)),loadJSON(`${DATA_BASE}/meta.json`)]);
+  [summary,meta,monthManifest]=await Promise.all([
+    loadCompressedJSON(`${DATA_BASE}/summary.json.gz.b64`).catch(()=>loadJSON(`${DATA_BASE}/summary.json`)),
+    loadJSON(`${DATA_BASE}/meta.json`),
+    loadJSON(`${DATA_BASE}/months-upload/manifest.json`).catch(()=>({}))
+  ]);
   els.slider.max=summary.length-1;
   computeSeries(); buildChart();
   await renderIndex(0);
