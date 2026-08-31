@@ -51,7 +51,7 @@
         <article class="stat"><span>Deteksi hari ini</span><strong id="dailyCount">—</strong></article>
         <article class="stat"><span>Rata-rata 7 hari</span><strong id="avg7">—</strong></article>
         <article class="stat"><span>Akumulasi 2026</span><strong id="cumulativeCount">—</strong></article>
-        <article class="stat"><span>Total FRP hari ini</span><strong id="frpSum">—</strong><small>MW, dijumlahkan antar-detection observation</small></article>
+        <article class="stat"><span>Total FRP hari ini</span><strong id="frpSum">—</strong><small>MW; penjumlahan FRP seluruh deteksi pada hari tersebut</small></article>
       </div>
 
       <div id="map" class="map" role="img" aria-label="Peta Indonesia dengan deteksi hotspot harian"></div>
@@ -79,7 +79,7 @@
       <h2>Cara membaca visual ini</h2>
       <p><strong>Satu deteksi hotspot bukan satu kejadian kebakaran.</strong> Sensor satelit dapat mendeteksi area panas yang sama pada lintasan berbeda, dan anomali termal juga dapat berasal dari sumber panas persisten seperti aktivitas vulkanik atau industri.</p>
       <p>Untuk menjaga performa web nasional, titik deteksi dikelompokkan ke grid 0,25° (sekitar 25–28 km). Opsi “sembunyikan grid persisten” hanya merupakan filter eksploratif berdasarkan grid yang aktif pada sedikitnya 60 hari dalam dataset 2026; filter ini <strong>bukan</strong> klasifikasi resmi karhutla.</p>
-      <details><summary>Rincian metodologi</summary><p>Data mencakup 195.722 deteksi VIIRS NOAA-21 dari 1 Januari–30 Agustus 2026. Setiap grid web menyimpan jumlah deteksi, total FRP, FRP maksimum, dan jumlah hari grid itu aktif sepanjang periode data.</p></details>
+      <details><summary>Rincian metodologi</summary><p>Data mencakup 195.722 deteksi VIIRS NOAA-21 dari 1 Januari–30 Agustus 2026. Payload peta per grid hanya membawa posisi, jumlah deteksi, dan jumlah hari grid aktif. FRP dihitung dari data sumber dan ditampilkan sebagai statistik harian nasional.</p></details>
     </section>
 
     <footer><p>Prototype editorial · sumber data NASA FIRMS · basemap © OpenStreetMap contributors, © CARTO.</p></footer>
