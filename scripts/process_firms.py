@@ -12,7 +12,7 @@ import json
 import math
 from pathlib import Path
 
-GRID = 0.05
+GRID = 0.25
 PERSISTENT_DAYS = 60
 
 
@@ -126,7 +126,6 @@ def main():
         encoded = base64.b64encode(compressed).decode("ascii")
         (args.output / "months-b64" / f"{month}.json.gz.b64").write_text(encoded, encoding="ascii")
 
-        # Compact payload for production web: only fields used by the map.
         compact_days = []
         for day in days:
             compact_cells = [
