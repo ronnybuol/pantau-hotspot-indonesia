@@ -43,14 +43,18 @@ async function loadJSON(url){
   return r.json();
 }
 
-async function decodeCompressedJSON(b64){
+async function decodeGzipBytes(b64){
   if(!('DecompressionStream' in window)) throw new Error('Browser tidak mendukung DecompressionStream');
   const binary = atob(b64);
   const bytes = new Uint8Array(binary.length);
   for(let i=0;i<binary.length;i++) bytes[i]=binary.charCodeAt(i);
   const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
-  const text = await new Response(stream).text();
-  return JSON.parse(text);
+  return new Uint8Array(await new Response(stream).arrayBuffer());
+}
+
+async function decodeCompressedJSON(b64){
+  const bytes = await decodeGzipBytes(b64);
+  return JSON.parse(new TextDecoder().decode(bytes));
 }
 
 async function loadCompressedJSON(url){
@@ -59,17 +63,43 @@ async function loadCompressedJSON(url){
   return decodeCompressedJSON((await r.text()).trim());
 }
 
+function parseMonthBinary(bytes, key){
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  if(String.fromCharCode(...bytes.slice(0,4)) !== 'HSP2') throw new Error('Format data peta tidak dikenali');
+  let o=4;
+  const month = view.getUint8(o++);
+  const dayCount = view.getUint8(o++);
+  const expectedMonth = Number(key.slice(5,7));
+  if(month !== expectedMonth) throw new Error(`Payload bulan tidak cocok: ${key}`);
+  const days=[];
+  for(let di=0;di<dayCount;di++){
+    const day=view.getUint8(o++);
+    const n=view.getUint16(o,true); o+=2;
+    const cells=[];
+    for(let i=0;i<n;i++){
+      const latIndex=view.getUint8(o++);
+      const lonIndex=view.getUint8(o++);
+      const count=view.getUint16(o,true); o+=2;
+      const activeDays=view.getUint8(o++);
+      const lat=-11.875 + latIndex*0.25;
+      const lon=90.125 + lonIndex*0.25;
+      cells.push({lat,lon,count,active_days_2026:activeDays});
+    }
+    days.push({date:`2026-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`,cells});
+  }
+  return {days};
+}
+
 async function loadMonth(key){
   const parts = monthManifest[key];
-  if(parts?.length){
-    const chunks = await Promise.all(parts.map(async name => {
-      const r = await fetch(`${DATA_BASE}/months-upload/${name}`);
-      if(!r.ok) throw new Error(`Gagal memuat ${name}`);
-      return (await r.text()).trim();
-    }));
-    return decodeCompressedJSON(chunks.join(''));
-  }
-  return loadCompressedJSON(`${DATA_BASE}/months-compact-b64/${key}.json.gz.b64`);
+  if(!parts?.length) throw new Error(`Manifest data tidak memuat ${key}`);
+  const chunks = await Promise.all(parts.map(async name => {
+    const r = await fetch(`${DATA_BASE}/months-upload/${name}`);
+    if(!r.ok) throw new Error(`Gagal memuat ${name}`);
+    return (await r.text()).trim();
+  }));
+  const bytes = await decodeGzipBytes(chunks.join(''));
+  return parseMonthBinary(bytes,key);
 }
 
 async function getDayData(iso){
@@ -80,10 +110,6 @@ async function getDayData(iso){
   }
   try{
     const month = await monthCache.get(key);
-    if (month.d) {
-      const day = month.d.find(d => d[0] === iso);
-      return day ? { date: day[0], cells: day[1], compact: true } : null;
-    }
     return month.days.find(d => d.date === iso);
   } finally {
     loading.style.display='none';
@@ -132,13 +158,8 @@ function drawCells(day){
   const hidePersistent = els.persist.checked;
   const group=L.layerGroup();
   for(const c of day.cells){
-    const compact = Array.isArray(c);
-    const lat = compact ? c[0] / 1000 : c.lat;
-    const lon = compact ? c[1] / 1000 : c.lon;
-    const count = compact ? c[2] : c.count;
-    const frpSum = compact ? c[3] / 100 : c.frp_sum;
-    const frpMax = compact ? c[4] / 100 : c.frp_max;
-    const activeDays = compact ? c[5] : c.active_days_2026;
+    const {lat,lon,count} = c;
+    const activeDays = c.active_days_2026;
     if(hidePersistent && activeDays >= PERSISTENT_DAYS) continue;
     const circle=L.circleMarker([lat,lon],{
       radius:markerRadius(count), color:'#a62b13', weight:.55,
@@ -146,9 +167,7 @@ function drawCells(day){
     });
     circle.bindTooltip(
       `<strong>${numberID.format(count)} deteksi</strong><br>`+
-      `FRP total: ${numberID.format(Math.round(frpSum))} MW<br>`+
-      `FRP maks: ${numberID.format(Math.round(frpMax))} MW<br>`+
-      `Aktif: ${numberID.format(activeDays)} hari dalam dataset`,
+      `Grid aktif: ${numberID.format(activeDays)} hari dalam dataset`,
       {className:'hotspot-tip',sticky:true,direction:'top'}
     );
     circle.addTo(group);
