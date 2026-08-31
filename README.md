@@ -30,12 +30,14 @@ Lalu buka `http://localhost:8000/`.
 
 ## Cloudflare
 
+GitHub repository ini terhubung ke Cloudflare Workers Builds. Setiap perubahan pada branch `main` akan menjalankan quality control, build, lalu deployment produksi.
+
 ```bash
 npm run build
 npx wrangler dev
 ```
 
-Deploy:
+Deploy manual:
 
 ```bash
 npm run deploy
