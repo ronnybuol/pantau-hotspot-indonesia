@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Peta interaktif perubahan harian deteksi hotspot Indonesia 2026 berdasarkan NASA FIRMS VIIRS NOAA-21." />
+  <title>Deteksi Hotspot Indonesia 2026</title>
+  <link rel="preconnect" href="https://unpkg.com" />
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <main class="story-shell">
+    <header class="story-header">
+      <p class="eyebrow">DATA JOURNALISM · 2026</p>
+      <h1>Ketika Deteksi Hotspot Memuncak</h1>
+      <p class="dek">Ikuti perubahan harian deteksi hotspot satelit di Indonesia dari 1 Januari hingga 30 Agustus 2026. Peta bergerak otomatis untuk memperlihatkan bagaimana aktivitas meningkat tajam menjelang Agustus.</p>
+      <p class="source-line">Sumber: NASA FIRMS · VIIRS NOAA-21 (N21) · Near Real-Time</p>
+    </header>
+
+    <section class="viz-card" aria-label="Peta interaktif deteksi hotspot">
+      <div class="toolbar">
+        <button id="playBtn" class="primary-btn" type="button" aria-label="Putar animasi">▶ Putar</button>
+        <button id="resetBtn" class="ghost-btn" type="button">↺ Awal</button>
+        <label class="speed-control">Kecepatan
+          <select id="speedSelect">
+            <option value="400">Lambat</option>
+            <option value="220" selected>Normal</option>
+            <option value="110">Cepat</option>
+          </select>
+        </label>
+        <label class="persist-toggle">
+          <input type="checkbox" id="persistToggle" />
+          <span>Sembunyikan grid persisten ≥60 hari <em>(eksperimental)</em></span>
+        </label>
+      </div>
+
+      <div class="date-stage">
+        <div>
+          <p class="date-kicker">Tanggal aktif</p>
+          <div id="dateLabel" class="date-label">1 Januari 2026</div>
+        </div>
+        <div id="peakBadge" class="peak-badge" hidden>
+          <strong>PUNCAK DATASET</strong>
+          <span>10.927 deteksi dalam sehari</span>
+        </div>
+      </div>
+
+      <div class="stat-grid">
+        <article class="stat">
+          <span>Deteksi hari ini</span>
+          <strong id="dailyCount">—</strong>
+        </article>
+        <article class="stat">
+          <span>Rata-rata 7 hari</span>
+          <strong id="avg7">—</strong>
+        </article>
+        <article class="stat">
+          <span>Akumulasi 2026</span>
+          <strong id="cumulativeCount">—</strong>
+        </article>
+        <article class="stat">
+          <span>Total FRP hari ini</span>
+          <strong id="frpSum">—</strong>
+          <small>MW, dijumlahkan antar-detection observation</small>
+        </article>
+      </div>
+
+      <div id="map" class="map" role="img" aria-label="Peta Indonesia dengan deteksi hotspot harian"></div>
+
+      <div class="timeline-wrap">
+        <input id="dateSlider" class="date-slider" type="range" min="0" max="241" value="0" step="1" aria-label="Pilih tanggal" />
+        <div class="month-scale" aria-hidden="true">
+          <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>Mei</span><span>Jun</span><span>Jul</span><span>Agu</span>
+        </div>
+      </div>
+
+      <section class="chart-section">
+        <div class="chart-heading">
+          <div>
+            <p class="date-kicker">Tren nasional</p>
+            <h2>Deteksi hotspot per hari</h2>
+          </div>
+          <div class="legend-inline"><span class="legend-line"></span> Harian <span class="legend-dash"></span> Rata-rata 7 hari</div>
+        </div>
+        <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
+      </section>
+
+      <div class="map-legend">
+        <span class="legend-title">Ukuran lingkaran = jumlah deteksi dalam grid ±5–6 km</span>
+        <span><i class="dot dot-small"></i> sedikit</span>
+        <span><i class="dot dot-medium"></i> sedang</span>
+        <span><i class="dot dot-large"></i> banyak</span>
+      </div>
+    </section>
+
+    <section class="methodology">
+      <h2>Cara membaca visual ini</h2>
+      <p><strong>Satu deteksi hotspot bukan satu kejadian kebakaran.</strong> Sensor satelit dapat mendeteksi area panas yang sama pada lintasan berbeda, dan anomali termal juga dapat berasal dari sumber panas persisten seperti aktivitas vulkanik atau industri.</p>
+      <p>Untuk menjaga performa web, titik deteksi dikelompokkan ke grid 0,05° (sekitar 5–6 km). Opsi “sembunyikan grid persisten” hanya merupakan filter eksploratif berdasarkan grid yang aktif pada sedikitnya 60 hari dalam dataset 2026; filter ini <strong>bukan</strong> klasifikasi resmi karhutla.</p>
+      <details>
+        <summary>Rincian metodologi</summary>
+        <p>Data mencakup 195.722 deteksi VIIRS NOAA-21 dari 1 Januari–30 Agustus 2026. Setiap grid menyimpan jumlah deteksi, confidence, siang/malam, total FRP, FRP maksimum, dan jumlah hari grid itu aktif sepanjang periode data.</p>
+      </details>
+    </section>
+
+    <footer>
+      <p>Prototype editorial · sumber data NASA FIRMS · basemap © OpenStreetMap contributors, © CARTO.</p>
+    </footer>
+  </main>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
