@@ -24,9 +24,9 @@ const els = {
 
 const map = L.map('map', { zoomControl:true, preferCanvas:true, minZoom:4, maxZoom:10, worldCopyJump:false });
 map.fitBounds([[-11.6,94.7],[6.6,141.5]], { padding:[8,8] });
-L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-  subdomains:'abcd', maxZoom:20,
-  attribution:'&copy; OpenStreetMap contributors &copy; CARTO'
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  maxZoom:19,
+  attribution:'&copy; OpenStreetMap contributors'
 }).addTo(map);
 
 const loading = L.DomUtil.create('div','loading-pill');
@@ -38,8 +38,8 @@ function isoToDate(iso){ return new Date(`${iso}T00:00:00Z`); }
 function monthKey(iso){ return iso.slice(0,7); }
 
 async function loadJSON(url){
-  const r = await fetch(url);
-  if(!r.ok) throw new Error(`Gagal memuat ${url}`);
+  const r = await fetch(url, { cache:'no-store' });
+  if(!r.ok) throw new Error(`Gagal memuat ${url} (${r.status})`);
   return r.json();
 }
 
@@ -50,17 +50,6 @@ async function decodeGzipBytes(b64){
   for(let i=0;i<binary.length;i++) bytes[i]=binary.charCodeAt(i);
   const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
   return new Uint8Array(await new Response(stream).arrayBuffer());
-}
-
-async function decodeCompressedJSON(b64){
-  const bytes = await decodeGzipBytes(b64);
-  return JSON.parse(new TextDecoder().decode(bytes));
-}
-
-async function loadCompressedJSON(url){
-  const r = await fetch(url);
-  if(!r.ok) throw new Error(`Gagal memuat ${url}`);
-  return decodeCompressedJSON((await r.text()).trim());
 }
 
 function parseMonthBinary(bytes, key){
@@ -94,8 +83,8 @@ async function loadMonth(key){
   const parts = monthManifest[key];
   if(!parts?.length) throw new Error(`Manifest data tidak memuat ${key}`);
   const chunks = await Promise.all(parts.map(async name => {
-    const r = await fetch(`${DATA_BASE}/months-upload/${name}`);
-    if(!r.ok) throw new Error(`Gagal memuat ${name}`);
+    const r = await fetch(`${DATA_BASE}/months-upload/${name}`, { cache:'no-store' });
+    if(!r.ok) throw new Error(`Gagal memuat ${name} (${r.status})`);
     return (await r.text()).trim();
   }));
   const bytes = await decodeGzipBytes(chunks.join(''));
@@ -118,7 +107,7 @@ async function getDayData(iso){
 
 function computeSeries(){
   let run=0;
-  cumulative = summary.map((d,i)=>{ run += d.count; return run; });
+  cumulative = summary.map(d=>{ run += d.count; return run; });
   moving7 = summary.map((d,i)=>{
     const start=Math.max(0,i-6); let s=0;
     for(let j=start;j<=i;j++) s+=summary[j].count;
@@ -127,6 +116,10 @@ function computeSeries(){
 }
 
 function buildChart(){
+  if(typeof window.Chart === 'undefined'){
+    console.warn('Chart.js tidak tersedia; peta dan statistik tetap dijalankan.');
+    return;
+  }
   const ctx=document.querySelector('#trendChart');
   const labels=summary.map(d=>d.date);
   chart = new Chart(ctx, {
@@ -155,6 +148,7 @@ function markerOpacity(count){ return Math.min(.82, .28 + Math.log10(count+1)*.2
 
 function drawCells(day){
   if(hotspotLayer) hotspotLayer.remove();
+  if(!day) return;
   const hidePersistent = els.persist.checked;
   const group=L.layerGroup();
   for(const c of day.cells){
@@ -176,6 +170,7 @@ function drawCells(day){
 }
 
 function updateChartCursor(i){
+  if(!chart) return;
   chart.data.datasets[2].data = summary.map((d,idx)=> idx===i ? d.count : null);
   chart.update('none');
 }
@@ -191,9 +186,16 @@ async function renderIndex(i){
   els.frp.textContent=numberID.format(Math.round(s.frp_sum));
   els.peak.hidden = s.date !== meta.peak_date;
   updateChartCursor(currentIndex);
-  const day=await getDayData(s.date);
-  if(currentIndex !== i) return;
-  drawCells(day);
+  try{
+    const day=await getDayData(s.date);
+    if(currentIndex !== i) return;
+    drawCells(day);
+    loading.style.display='none';
+  }catch(err){
+    console.error('Gagal memuat data peta:', err);
+    loading.style.display='block';
+    loading.textContent='Peta hotspot gagal dimuat';
+  }
   prefetchNextMonth(s.date);
 }
 
@@ -221,25 +223,26 @@ function play(){
 els.play.addEventListener('click',play);
 els.reset.addEventListener('click',async()=>{stop();await renderIndex(0)});
 els.slider.addEventListener('input',async e=>{stop();await renderIndex(Number(e.target.value))});
-els.persist.addEventListener('change',async()=>{const day=await getDayData(summary[currentIndex].date);drawCells(day)});
+els.persist.addEventListener('change',async()=>{try{const day=await getDayData(summary[currentIndex].date);drawCells(day)}catch(err){console.error(err)}});
 els.speed.addEventListener('change',()=>{ if(playing){clearTimeout(timer);scheduleNext()} });
 
 document.addEventListener('visibilitychange',()=>{ if(document.hidden) stop(); });
 
 async function init(){
   [summary,meta,monthManifest]=await Promise.all([
-    loadCompressedJSON(`${DATA_BASE}/summary.json.gz.b64`).catch(()=>loadJSON(`${DATA_BASE}/summary.json`)),
+    loadJSON(`${DATA_BASE}/summary-lite.json`),
     loadJSON(`${DATA_BASE}/meta.json`),
-    loadJSON(`${DATA_BASE}/months-upload/manifest.json`).catch(()=>({}))
+    loadJSON(`${DATA_BASE}/months-upload/manifest.json`)
   ]);
   els.slider.max=summary.length-1;
-  computeSeries(); buildChart();
+  computeSeries();
+  buildChart();
   await renderIndex(0);
   const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if(!reduced) setTimeout(play,900);
 }
 
 init().catch(err=>{
-  console.error(err);
+  console.error('Inisialisasi gagal:', err);
   loading.style.display='block'; loading.textContent='Data gagal dimuat';
 });
