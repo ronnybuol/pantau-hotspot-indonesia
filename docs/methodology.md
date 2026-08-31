@@ -9,11 +9,12 @@ Jumlah record: 195.722 deteksi.
 Visual menggunakan istilah **deteksi hotspot**, bukan “jumlah kebakaran”. Satu kejadian kebakaran dapat menghasilkan lebih dari satu deteksi dan dapat teramati pada lintasan satelit yang berbeda. Anomali termal juga dapat berasal dari sumber panas persisten selain karhutla.
 
 ## Agregasi spasial
-Agar visual lancar di web dan ponsel, latitude/longitude dikelompokkan ke grid 0,05 derajat (sekitar 5–6 km, tergantung lintang). Setiap grid per hari menyimpan:
+Untuk visual nasional agar lancar di web dan ponsel, latitude/longitude dikelompokkan ke grid 0,25 derajat (sekitar 25–28 km pada lintang Indonesia). Setiap grid per hari menyimpan:
 - jumlah deteksi;
 - total dan maksimum FRP;
-- jumlah berdasarkan confidence (low/nominal/high) dan siang/malam;
 - jumlah hari grid tersebut aktif sepanjang periode dataset.
+
+Jumlah deteksi harian tetap dihitung dari seluruh record sumber; agregasi grid hanya mengubah cara titik digambar pada peta, bukan total harian.
 
 ## Filter persisten
 Prototype menyediakan filter eksploratif untuk menyembunyikan grid yang aktif sedikitnya 60 hari selama periode data. Filter ini dibuat untuk membantu pembaca melihat pengaruh sumber panas berulang, tetapi **bukan klasifikasi resmi karhutla** dan tidak boleh digunakan untuk menuduh lokasi tertentu sebagai sumber kebakaran atau bukan kebakaran.
