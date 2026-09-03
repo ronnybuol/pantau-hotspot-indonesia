@@ -22,8 +22,15 @@ const els = {
   frp: document.querySelector('#frpSum'), peak: document.querySelector('#peakBadge')
 };
 
+const INDONESIA_BOUNDS = [[-11.6,94.7],[6.6,141.5]];
 const map = L.map('map', { zoomControl:true, preferCanvas:true, minZoom:4, maxZoom:10, worldCopyJump:false });
-map.fitBounds([[-11.6,94.7],[6.6,141.5]], { padding:[8,8] });
+
+function fitIndonesia(){
+  map.invalidateSize({ pan:false });
+  map.fitBounds(INDONESIA_BOUNDS, { padding:[12,12], maxZoom:5, animate:false });
+}
+
+fitIndonesia();
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
   maxZoom:19,
   attribution:'&copy; OpenStreetMap contributors'
@@ -228,6 +235,11 @@ els.speed.addEventListener('change',()=>{ if(playing){clearTimeout(timer);schedu
 
 document.addEventListener('visibilitychange',()=>{ if(document.hidden) stop(); });
 
+window.addEventListener('load',()=>{
+  requestAnimationFrame(fitIndonesia);
+  setTimeout(fitIndonesia,350);
+});
+
 async function init(){
   [summary,meta,monthManifest]=await Promise.all([
     loadJSON(`${DATA_BASE}/summary-lite.json`),
@@ -238,6 +250,13 @@ async function init(){
   computeSeries();
   buildChart();
   await renderIndex(0);
+
+  // Saat di-embed di WordPress, ukuran iframe bisa baru stabil setelah konten selesai dirender.
+  // Paksa Leaflet menghitung ulang ukuran lalu tampilkan seluruh Indonesia.
+  requestAnimationFrame(fitIndonesia);
+  setTimeout(fitIndonesia,500);
+  setTimeout(fitIndonesia,1200);
+
   const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if(!reduced) setTimeout(play,900);
 }
